@@ -1,15 +1,15 @@
 package main
 
 import ("fmt"
-				"net/http")
+				"net/http"
+				"io/ioutil")
 
-func index_page(w http.ResponseWriter, r *http.Request){
-	fmt.Fprintf(w, `
-		<h1>hello word <h2>
-	`)
-}
+
 
 func main(){
-	http.HandleFunc("/",index_page)
-	http.ListenAndServe(":8080", nil)
+	resp, _ := http.Get("https://www.washingtonpost.com/news-sitemaps/index.xml")
+	byt, _ := ioutil.ReadAll(resp.Body)
+	string_body := string(byt)
+	fmt.Println(string_body)
+	resp.Body.Close()
 }
