@@ -34,16 +34,18 @@ func main() {
 		bodyByt, err := ioutil.ReadAll(resp.Body)
 
 		if err != nil {
-			fmt.Println("this time its the body err")
+			panic("err with get request")
 		}
 
-		resp.Body.Close()
+		defer resp.Body.Close()
 
 		var s SitemapIndex
 
 		xml.Unmarshal(bodyByt, &s)
 
-		fmt.Println(s.Location)
+		for _, location := range s.Location {
+			fmt.Printf("\n %s", location)
+		}
 
 	} else {
 		fmt.Println("Argh! Broken")
