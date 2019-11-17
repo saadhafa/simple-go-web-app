@@ -1,19 +1,23 @@
 package main
 
 import (
+	"encoding/xml"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	// "encoding/xml"
 )
 
-// type SitemapIndex struct{
-// 	Location []Location `xml:"sitemap"`
-// }
+type SitemapIndex struct {
+	Location []Location `xml:"sitemap"`
+}
 
-// type Location struct{
-// 	Loc string `xml:"loc"`
-// }
+type Location struct {
+	Loc string `xml:"loc"`
+}
+
+func (l Location) String() string {
+	return fmt.Sprintf(l.Loc)
+}
 
 func main() {
 
@@ -33,27 +37,16 @@ func main() {
 			fmt.Println("this time its the body err")
 		}
 
-		body_string := string(bodyByt)
-		fmt.Println(body_string)
 		resp.Body.Close()
+
+		var s SitemapIndex
+
+		xml.Unmarshal(bodyByt, &s)
+
+		fmt.Println(s.Location)
 
 	} else {
 		fmt.Println("Argh! Broken")
 	}
-
-	// body, _ := ioutil.ReadAll(resp.Body)
-	// resp.Body.Close()
-	//fmt.Println(body)
-
-	// if resp == nil {
-	// 	fmt.Println("there is an err")
-	// }else{
-	// 	byt, _ := ioutil.ReadAll(resp.Body)
-	// 	fmt.Println(byt)
-	// }
-	// // string_body := string(byt)
-	// //fmt.Println(string_body)
-	// fmt.Println("all fine")
-	// resp.Body.Close()
 
 }
