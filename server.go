@@ -5,22 +5,29 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 type SitemapIndex struct {
-	Location []Location `xml:"sitemap"`
+	Location []string `xml:"sitemap>loc"`
 }
 
-type Location struct {
-	Loc string `xml:"loc"`
+type News struct {
+	Title     []string `xml:"url>news>title"`
+	Keywords  []string `xml:"url>news>keywords"`
+	Locations []string `xml:"url>loc"`
 }
 
-func (l Location) String() string {
-	return fmt.Sprintf(l.Loc)
+type NewsMap struct {
+	Keyword  string
+	Location string
 }
 
 func main() {
-
+	// init struct
+	var s SitemapIndex
+	var n News
+	newMap := make(map[string]NewsMap)
 	resp, err := http.Get("https://www.washingtonpost.com/news-sitemaps/index.xml")
 	if err != nil {
 		fmt.Println("there is an error with the request firewall or something else")
@@ -32,19 +39,32 @@ func main() {
 		fmt.Println("HTTP Status is in the 2xx range")
 
 		bodyByt, err := ioutil.ReadAll(resp.Body)
+		defer resp.Body.Close()
 
 		if err != nil {
 			panic("err with get request")
 		}
 
-		defer resp.Body.Close()
-
-		var s SitemapIndex
-
 		xml.Unmarshal(bodyByt, &s)
 
 		for _, location := range s.Location {
-			fmt.Printf("\n %s", location)
+
+			tempURL := strings.Replace(location, "\n", "", -1)
+
+			resp, _ := http.Get(tempURL)
+
+			byts, _ := ioutil.ReadAll(resp.Body)
+
+			xml.Unmarshal(byts, &n)
+			for index, _ := range n.Keywords {
+				newMap[n.Title[index]] = NewsMap{n.Keywords[index], n.Locations[index]}
+			}
+		}
+
+		for index, data := range newMap {
+			fmt.Println("\n\n\n", index)
+			fmt.Println("\n", data.Keyword)
+			fmt.Println("\n", data.Location)
 		}
 
 	} else {
