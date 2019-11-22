@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>web app go</title>
+</head>
+<body>
+
+  <main>
+      <h1>{{ .Title}}</h1>
+
+      <table class="table">
+        <thead scope="row">
+            <th scope="col">links</th>
+            <th scope="col">Keywords</th>
+        </thead>
+      
+        <tbody>
+      
+            {{ range $key, $value := .News }}
+          <tr>
+            <td> <a href="{{ $value.Location }}" target="_blank">{{ $key }} </a> </td>
+            <td> {{ $value.Keyword }} </td>
+          </tr>
+          {{ end }}
+        </tbody>
+      
+      </table>
+  </main>
+  
+<script>
+  let el = document.querySelector("h1 a")
+  console.log('flag ->',el)
+  el.addEventListener('click', () =>{
+    document.querySelector('h1').innerText = `
+      please wait ..
+      `
+  })
+</script>
+</body>
+</html>

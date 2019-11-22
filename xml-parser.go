@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/xml"
 	"fmt"
-	"html/template"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -24,41 +23,20 @@ type NewsMap struct {
 	Location string
 }
 
-type NewsAggPage struct {
-	Title string
-	News  map[string]NewsMap
-}
-
-func indexHandler(w http.ResponseWriter, r *http.Request) {
-
-	fmt.Fprintf(w, `
-	<h1>Hello word <a href="/news">News</a></h1>
-	`)
-
-}
-
-func NewsAggPageHandler(w http.ResponseWriter, r *http.Request) {
-
-	// struct init
+func main() {
+	// init struct
 	var s SitemapIndex
 	var n News
 	newMap := make(map[string]NewsMap)
-
-	// Get request to washingtonpost xml page
-
 	resp, err := http.Get("https://www.washingtonpost.com/news-sitemaps/index.xml")
-
 	if err != nil {
-		panic("there is an error with the request firewall or something else")
+		fmt.Println("there is an error with the request firewall or something else")
 	}
 
 	// Print the HTTP Status Code and Status Name
 	fmt.Println("HTTP Response Status:", resp.StatusCode, http.StatusText(resp.StatusCode))
-
 	if resp.StatusCode >= 200 && resp.StatusCode <= 299 {
 		fmt.Println("HTTP Status is in the 2xx range")
-
-		// reading Response body
 
 		bodyByt, err := ioutil.ReadAll(resp.Body)
 		defer resp.Body.Close()
@@ -78,24 +56,19 @@ func NewsAggPageHandler(w http.ResponseWriter, r *http.Request) {
 			byts, _ := ioutil.ReadAll(resp.Body)
 
 			xml.Unmarshal(byts, &n)
-
 			for index, _ := range n.Keywords {
 				newMap[n.Title[index]] = NewsMap{n.Keywords[index], n.Locations[index]}
 			}
 		}
 
-		p := NewsAggPage{Title: "This is going to take a long time to load ...", News: newMap}
+		for index, data := range newMap {
+			fmt.Println("\n\n\n", index)
+			fmt.Println("\n", data.Keyword)
+			fmt.Println("\n", data.Location)
+		}
 
-		t, _ := template.ParseFiles("index.html")
-
-		t.Execute(w, p)
+	} else {
+		fmt.Println("Argh! Broken")
 	}
-}
-
-func main() {
-
-	http.HandleFunc("/", indexHandler)
-	http.HandleFunc("/news", NewsAggPageHandler)
-	http.ListenAndServe(":8080", nil)
 
 }
