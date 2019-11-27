@@ -7,7 +7,10 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"sync"
 )
+
+var wg sync.WaitGroup
 
 type SitemapIndex struct {
 	Location []string `xml:"sitemap>loc"`
@@ -37,11 +40,23 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func newsRoutine(c chan News, location string) {
+	defer wg.Done()
+	var n News
+	tempURL := strings.Replace(location, "\n", "", -1)
+	resp, _ := http.Get(tempURL)
+	byts, _ := ioutil.ReadAll(resp.Body)
+	xml.Unmarshal(byts, &n)
+	resp.Body.Close()
+
+	c <- n
+
+}
+
 func NewsAggPageHandler(w http.ResponseWriter, r *http.Request) {
 
 	// struct init
 	var s SitemapIndex
-	var n News
 	newMap := make(map[string]NewsMap)
 
 	// Get request to washingtonpost xml page
@@ -69,19 +84,22 @@ func NewsAggPageHandler(w http.ResponseWriter, r *http.Request) {
 
 		xml.Unmarshal(bodyByt, &s)
 
+		// channel
+		queue := make(chan News, 30)
 		for _, location := range s.Location {
+			wg.Add(1)
+			go newsRoutine(queue, location)
+		}
 
-			tempURL := strings.Replace(location, "\n", "", -1)
+		wg.Wait()
+		close(queue)
 
-			resp, _ := http.Get(tempURL)
+		for el := range queue {
 
-			byts, _ := ioutil.ReadAll(resp.Body)
-
-			xml.Unmarshal(byts, &n)
-
-			for index, _ := range n.Keywords {
-				newMap[n.Title[index]] = NewsMap{n.Keywords[index], n.Locations[index]}
+			for index, _ := range el.Keywords {
+				newMap[el.Title[index]] = NewsMap{el.Keywords[index], el.Locations[index]}
 			}
+
 		}
 
 		p := NewsAggPage{Title: "This is going to take a long time to load ...", News: newMap}
@@ -95,7 +113,7 @@ func NewsAggPageHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 
 	http.HandleFunc("/", indexHandler)
-	http.HandleFunc("/news", NewsAggPageHandler)
+	go http.HandleFunc("/news", NewsAggPageHandler)
 	http.ListenAndServe(":8080", nil)
 
 }
